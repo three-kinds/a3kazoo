@@ -2,7 +2,7 @@
 import logging
 
 from kazoo.client import KazooClient
-from a3kazoo.utils import zk_make_acl, zk_state_listener
+from a3kazoo.utils import zk_make_acl
 
 if __name__ == '__main__':
     logger = logging.getLogger(__name__)
@@ -15,7 +15,6 @@ if __name__ == '__main__':
         'ca': '/data/ssl/ca.pem',
         'use_ssl': True,
     })
-    zk.add_listener(zk_state_listener(logger=logger))
     zk.start()
 
     zk_make_acl(zk=zk, path='/nodes/site/', username='test', password='pass', logger=logger)

@@ -9,10 +9,11 @@ from kazoo.security import make_digest_acl
 def zk_state_listener(logger: Logger, exit_event: Event):
     def _core(state: str):
         if state == KazooState.LOST:
-            logger.warning(f"已断开 zookeeper")
+            logger.warning(f"已断开zookeeper的连接")
         elif state == KazooState.SUSPENDED:
-            logger.critical(f"zookeeper 连接已中断，准备退出")
+            logger.critical(f"zookeeper连接被中断，准备退出")
             exit_event.set()
+            # 退出的是listener线程，否则会重试
             sys.exit(-1)
         else:
             logger.info(f"已连接到zookeeper")
