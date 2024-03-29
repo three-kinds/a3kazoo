@@ -45,4 +45,4 @@ class NodeThread(Thread):
         self._exit_event.wait()
         # 当与zookeeper服务端断开连接时，主动将进程退出
         if self._should_force_exit:
-            force_exit_from_threads()
+            force_exit_from_threads(f'因与zookeeper服务端断开连接，所以整个进程退出')

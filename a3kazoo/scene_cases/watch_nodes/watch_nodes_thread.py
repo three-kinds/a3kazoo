@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import sys
 import logging
-from threading import Event, Thread
+from a3py.simplified.concurrence import GracefulExitThread
 
 from kazoo.exceptions import NoNodeError
 from kazoo.client import KazooClient
@@ -13,20 +13,18 @@ from .abstract_node_change_service import AbstractNodeChangeService
 logger = logging.getLogger(__name__)
 
 
-class WatchNodesThread(Thread):
+class WatchNodesThread(GracefulExitThread):
 
     def __init__(self, conf: dict, nodes_path: str, node_change_service: AbstractNodeChangeService, *args, **kwargs):
         self._conf = conf
         self._nodes_path = nodes_path
         self._node_change_service = node_change_service
 
-        # 配置为守护线程
-        super().__init__(daemon=True, *args, **kwargs)
+        super().__init__(*args, **kwargs)
 
     def run(self):
-        exit_event = Event()
         zk = KazooClient(**self._conf)
-        zk.add_listener(zk_state_listener(logger, exit_event))
+        zk.add_listener(zk_state_listener(logger, self.exit_event))
         zk.start()
 
         try:
@@ -39,4 +37,4 @@ class WatchNodesThread(Thread):
 
         logger.info(f"开启观察...")
         ChildrenWatch(zk, self._nodes_path, self._node_change_service.on_change)
-        exit_event.wait()
+        self.exit_event.wait()
