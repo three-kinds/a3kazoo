@@ -1,5 +1,9 @@
 # History
 
+## 0.1.4
+
+* fix: network fluctuations caused process exit
+
 ## 0.1.2
 
 * update watch_nodes: use Thread
