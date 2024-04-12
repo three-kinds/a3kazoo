@@ -1,20 +1,42 @@
 # -*- coding: utf-8 -*-
 import sys
-from threading import Event
+import time
+from threading import Event, Thread
 from logging import Logger
 from kazoo.client import KazooState, KazooClient
 from kazoo.security import make_digest_acl
 
 
-def zk_state_listener(logger: Logger, exit_event: Event):
+class CheckStateThread(Thread):
+
+    def __init__(self, logger: Logger, exit_event: Event, zk: KazooClient, timeout_seconds, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.logger = logger
+        self.exit_event = exit_event
+        self.zk = zk
+        self.timeout_seconds = timeout_seconds
+
+    def run(self):
+        start_tick = int(time.time())
+        while True:
+            time.sleep(0.25)
+            if self.zk.state not in [KazooState.SUSPENDED, KazooState.LOST]:
+                self.logger.info('网络恢复')
+                break
+
+            if int(time.time()) - start_tick >= self.timeout_seconds:
+                self.logger.critical(f"zookeeper连接被中断，准备退出")
+                self.exit_event.set()
+                sys.exit(-1)
+
+
+def zk_state_listener(logger: Logger, exit_event: Event, zk: KazooClient, timeout_seconds: int = 5):
     def _core(state: str):
         if state == KazooState.LOST:
             logger.warning(f"已断开zookeeper的连接")
         elif state == KazooState.SUSPENDED:
-            logger.critical(f"zookeeper连接被中断，准备退出")
-            exit_event.set()
-            # 退出的是listener线程，否则会重试
-            sys.exit(-1)
+            logger.critical(f"网络波动")
+            CheckStateThread(logger=logger, exit_event=exit_event, zk=zk, timeout_seconds=timeout_seconds).start()
         else:
             logger.info(f"已连接到zookeeper")
 

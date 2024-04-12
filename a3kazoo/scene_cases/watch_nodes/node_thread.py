@@ -24,11 +24,12 @@ class NodeThread(Thread):
 
     def get_node_id(self) -> str:
         zk = KazooClient(**self._conf)
-        zk.add_listener(zk_state_listener(logger=logger, exit_event=self._exit_event))
+        zk.add_listener(zk_state_listener(logger=logger, exit_event=self._exit_event, zk=zk, timeout_seconds=self._conf.get('timeout')))
         zk.start()
 
         value = zk.create(path=self._nodes_path, ephemeral=True, sequence=True)
         node_id = value.rsplit('/', 2)[-1]
+        logger.info(f'获得节点id: {node_id}')
 
         def _close_zk(zk_client: KazooClient):
             logger.info(f'退出时断开zookeeper')
@@ -43,6 +44,9 @@ class NodeThread(Thread):
     def run(self):
         # 如果不使用线程等，当服务端挂掉，客户端还不知道，会继续执行
         self._exit_event.wait()
+
+        self._exit_event.clear()
+
         # 当与zookeeper服务端断开连接时，主动将进程退出
         if self._should_force_exit:
             force_exit_from_threads(f'因与zookeeper服务端断开连接，所以整个进程退出')

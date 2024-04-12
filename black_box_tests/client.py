@@ -13,7 +13,8 @@ if __name__ == '__main__':
             'certfile': '/data/ssl/client.pem',
             'ca': '/data/ssl/ca.pem',
             'use_ssl': True,
-            'auth_data': [("digest", "test:pass"), ]
+            'auth_data': [("digest", "test:pass"), ],
+            'timeout': 5,
         },
         nodes_path='/nodes/site/aaa:',
         should_force_exit=True
@@ -22,6 +23,5 @@ if __name__ == '__main__':
     print(f'node_id: {node_id}')
     node_thread.start()
 
-    print('main start')
-    time.sleep(10)
-    print('main exit')
+    while True:
+        time.sleep(10)

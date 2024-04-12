@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 import logging
-from a3py.simplified.concurrence import run_threads_until_any_exits
-from a3kazoo.scene_cases.watch_nodes import AbstractNodeChangeService, WatchNodesThread
+import threading
+
+from a3kazoo.scene_cases.watch_nodes import AbstractNodeChangeService, run_watch_nodes_server
 
 
 class NodeChangeService(AbstractNodeChangeService):
@@ -24,16 +25,21 @@ class NodeChangeService(AbstractNodeChangeService):
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO)
-    watch_nodes_thread = WatchNodesThread(
+
+    logger = logging.getLogger(__name__)
+    exit_event = threading.Event()
+    run_watch_nodes_server(
         conf={
             'hosts': '127.0.0.1:2281',
             'keyfile': '/data/ssl/client-key.pem',
             'certfile': '/data/ssl/client.pem',
             'ca': '/data/ssl/ca.pem',
             'use_ssl': True,
+            'timeout': 10,
             'auth_data': [("digest", "test:pass"), ]
         },
         nodes_path='/nodes/site/',
         node_change_service=NodeChangeService(),
+        exit_event=exit_event,
+        logger=logger
     )
-    run_threads_until_any_exits(thread_list=[watch_nodes_thread, ])

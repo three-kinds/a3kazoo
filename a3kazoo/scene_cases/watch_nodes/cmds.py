@@ -13,7 +13,7 @@ from .abstract_node_change_service import AbstractNodeChangeService
 
 def run_watch_nodes_server(conf: dict, nodes_path: str, node_change_service: AbstractNodeChangeService, exit_event: Event, logger: logging.Logger):
     zk = KazooClient(**conf)
-    zk.add_listener(zk_state_listener(logger, exit_event))
+    zk.add_listener(zk_state_listener(logger, exit_event, zk, timeout_seconds=conf.get('timeout')))
     zk.start()
 
     try:
